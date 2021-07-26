@@ -1,0 +1,1335 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>testrobot</title><meta name="generator" content="MATLAB 9.8"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2021-03-31"><meta name="DC.source" content="testrobot.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">initialisation</a></li><li><a href="#2">setting up test scene</a></li><li><a href="#4">detect features</a></li><li><a href="#7">transforming frames</a></li><li><a href="#9">reproducing the path</a></li></ul></div><h2 id="1">initialisation</h2><pre class="codeinput">clc; clear <span class="string">all</span>; close <span class="string">all</span>;
+
+currentFolder=<span class="string">'C:\Users\elzaatas\OneDrive - Coventry University\cobot-intuitive-teach\GenLfD-tutorial\'</span>;
+cd(currentFolder);
+addpath(genpath(currentFolder));
+
+handfeature=0;
+
+task=<span class="string">'handover'</span>;
+bool_Simulation=0;
+<span class="keyword">if</span> bool_Simulation==1
+    task_path = strcat(<span class="string">'Simulation\data\'</span>,task);
+<span class="keyword">else</span>
+    task_path = strcat(<span class="string">'tasks\'</span>,task);
+<span class="keyword">end</span>
+boolLive=false;
+vrep=remApi(<span class="string">'remoteApi'</span>);
+vrep.simxFinish(-1);
+id=vrep.simxStart(<span class="string">'127.0.0.1'</span>,19997,true,true,1000,5); <span class="comment">% connect simulation to matlab</span>
+<span class="keyword">if</span> id &lt; 0
+    system(strcat(task_path,<span class="string">"\RobotScene.ttt"</span>)); <span class="comment">% open simulation software if not already open</span>
+<span class="keyword">end</span>
+<span class="keyword">for</span> nbtry=1:100
+    vrep=remApi(<span class="string">'remoteApi'</span>);
+    vrep.simxFinish(-1);
+    id=vrep.simxStart(<span class="string">'127.0.0.1'</span>,19997,true,true,5000,5); <span class="comment">% connect simulation to matlab</span>
+    <span class="keyword">if</span> id &gt;= 0
+        returnCode=vrep.simxStartSimulation(id,vrep.simx_opmode_oneshot); <span class="comment">% start simulation</span>
+        <span class="keyword">break</span>;
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+returnCode=vrep.simxStartSimulation(id,vrep.simx_opmode_oneshot); <span class="comment">% start simulation</span>
+
+<span class="comment">% get object handles from simulation</span>
+[camerro,vision1] = vrep.simxGetObjectHandle(id,<span class="string">'Vision_sensor0'</span>,<span class="keyword">...</span>
+    vrep.simx_opmode_oneshot_wait); <span class="comment">% the camera to read images from</span>
+[camerro,target] = vrep.simxGetObjectHandle(id,<span class="string">'Target'</span>,<span class="keyword">...</span>
+    vrep.simx_opmode_oneshot_wait);<span class="comment">% the cobot's end effector</span>
+[camerro,UR3_base] = vrep.simxGetObjectHandle(id,<span class="string">'UR3'</span>,<span class="keyword">...</span>
+    vrep.simx_opmode_oneshot_wait);<span class="comment">%the robot's base position</span>
+[camerro,obj1] = vrep.simxGetObjectHandle(id,<span class="string">'obj1'</span>,<span class="keyword">...</span>
+    vrep.simx_opmode_oneshot_wait);<span class="comment">%the robot's base position</span>
+[camerro,obj2] = vrep.simxGetObjectHandle(id,<span class="string">'obj2'</span>,<span class="keyword">...</span>
+    vrep.simx_opmode_oneshot_wait);<span class="comment">%the robot's base position</span>
+
+<span class="comment">%get position of fixed items</span>
+[returnCode, cam_pos]=vrep.simxGetObjectPosition(id,vision1,-1,<span class="keyword">...</span>
+    vrep.simx_opmode_oneshot_wait);
+[returnCode, cam_posrel]=vrep.simxGetObjectPosition(id,vision1,UR3_base,<span class="keyword">...</span>
+    vrep.simx_opmode_oneshot_wait);
+[returnCode, target_init_pos]=vrep.simxGetObjectPosition(id,target,-1,<span class="keyword">...</span>
+    vrep.simx_opmode_oneshot_wait);
+[returnCode, obj1_init_pos]=vrep.simxGetObjectPosition(id,obj1,-1,<span class="keyword">...</span>
+    vrep.simx_opmode_oneshot_wait);
+[returnCode, obj2_init_pos]=vrep.simxGetObjectPosition(id,obj2,-1,<span class="keyword">...</span>
+    vrep.simx_opmode_oneshot_wait);
+[returnCode, obj1_init_or]=vrep.simxGetObjectOrientation(id,obj1,-1,<span class="keyword">...</span>
+    vrep.simx_opmode_oneshot_wait);
+[returnCode, obj2_init_or]=vrep.simxGetObjectOrientation(id,obj2,-1,<span class="keyword">...</span>
+    vrep.simx_opmode_oneshot_wait);
+</pre><h2 id="2">setting up test scene</h2><pre class="codeinput">manual=0;
+nbTests= 100;
+<span class="keyword">for</span> testiter=1:nbTests
+</pre><pre class="codeinput">    <span class="keyword">if</span> manual
+        trigger =input(<span class="string">"Record image? y/n "</span>,<span class="string">'s'</span>);
+        <span class="keyword">if</span> trigger == <span class="string">'y'</span>
+            [returnCode,resolut,image]= vrep.simxGetVisionSensorImage2(id,vision1,0,vrep.simx_opmode_oneshot_wait);
+            imshow(image);
+        <span class="keyword">elseif</span> trigger == <span class="string">'n'</span>
+            <span class="keyword">return</span>;
+        <span class="keyword">else</span>
+            fprintf(<span class="string">'invalid input. Click either y or n followed by Enter.'</span>)
+        <span class="keyword">end</span>
+
+    <span class="keyword">else</span>
+        <span class="comment">%vary position +orientation of obj 1 and 2 randomly</span>
+        scale=0.03;
+        posobj1=obj1_init_pos+(rand(1,3)*2-1).*[scale,scale,0];
+        posobj2=obj2_init_pos+(rand(1,3)*2-1).*[scale,scale,0];
+
+        posobj2=obj2_init_pos+(rand(1,3)*2-1).*[scale,scale/5,0];
+        orobj1=[0,0,1].*rand(1,3)*3.1415*2;
+        orobj2=[0,0,1].*rand(1,3)*3.1415*2;
+        orobj2=[1/6,1/4,-1/4].*(rand(1,3)*2-1)*3.1415/2+[3.1415/2,0,-3.1415/2];
+        [returnCode]=vrep.simxSetObjectPosition(id,obj1,-1, posobj1,<span class="keyword">...</span>
+            vrep.simx_opmode_oneshot_wait);
+        [returnCode]=vrep.simxSetObjectPosition(id,obj2,-1,posobj2,<span class="keyword">...</span>
+            vrep.simx_opmode_oneshot_wait);
+        <span class="comment">%         [returnCode]=vrep.simxSetObjectOrientation(id,obj1,-1, orobj1,...</span>
+        <span class="comment">%             vrep.simx_opmode_oneshot_wait);</span>
+        [returnCode]=vrep.simxSetObjectOrientation(id,obj2,-1,orobj2,<span class="keyword">...</span>
+            vrep.simx_opmode_oneshot_wait);
+        [returnCode,resolut,image]= vrep.simxGetVisionSensorImage2(id,vision1,0,vrep.simx_opmode_oneshot_wait);
+        imshow(image);
+    <span class="keyword">end</span>
+
+    img=rgb2gray(image);
+</pre><img vspace="5" hspace="5" src="testrobot_01.png" alt=""> <img vspace="5" hspace="5" src="testrobot_04.png" alt=""> <h2 id="4">detect features</h2><pre class="codeinput">    corners = detectfeatures (img);
+    [features_new, corners]=extractFeatures(img, corners);
+    <span class="comment">%detect hand features if any</span>
+    <span class="comment">%save image and then pass images path</span>
+    images_path=strcat(task_path, <span class="string">'\results\img'</span>, int2str(testiter), <span class="string">'.jpg'</span>);
+    imwrite(image,images_path); <span class="comment">%failed</span>
+
+
+    imshow(image); hold <span class="string">on</span>;
+    plot(corners.Location(:,1),corners.Location(:,2),<span class="string">'.'</span>,<span class="string">'color'</span>,<span class="string">'white'</span>,<span class="string">'MarkerSize'</span>,30);
+    <span class="keyword">for</span> k=1:length(corners)
+        plot([corners.Location(k,1),corners.Location(k,1)+10*sin(corners.Orientation(k))],[corners.Location(k,2),corners.Location(k,2)+10*cos(corners.Orientation(k))]<span class="keyword">...</span>
+            ,<span class="string">'MarkerSize'</span>,25,<span class="string">'color'</span>,<span class="string">'black'</span>);
+    <span class="keyword">end</span>
+    hold <span class="string">off</span>;
+    title(strcat(<span class="string">'Demo Image '</span>,int2str(i)));
+
+    load(strcat(task_path,<span class="string">'\calib.mat'</span>));
+    load(strcat(task_path,<span class="string">'\model.mat'</span>));
+    load(strcat(task_path,<span class="string">'\features.mat'</span>));
+    load(strcat(task_path,<span class="string">'\parameters.mat'</span>));
+
+    matched_mat=0;
+    bool_all_matched=ones(1,length(indx));
+    index_matched_feat=zeros(1,10);
+    <span class="comment">%</span>
+    <span class="comment">% for task_img=1:size(features,1)</span>
+    <span class="comment">%     features_subtask(:,:)=single(features(task_img,:,:));</span>
+    <span class="comment">%     boxPairs = matchFeatures(features_new, features_subtask','Unique',true,'MatchThreshold',100);</span>
+    <span class="comment">%</span>
+    <span class="comment">%     for feat_indx=1:length(indx)</span>
+    <span class="comment">%         index_obj = indx(feat_indx);</span>
+    <span class="comment">%         otherframes=objs(find(objs(:,index_obj)~=0),index_obj);% get list of valid features in same object</span>
+    <span class="comment">%</span>
+    <span class="comment">%         for frameInObjIndx=length(otherframes):-1:1</span>
+    <span class="comment">%             frame_id=otherframes(frameInObjIndx);</span>
+    <span class="comment">%             if length(find(boxPairs(:,2)==frame_id))&gt;0</span>
+    <span class="comment">%                 index_matched_feat(feat_indx)=find(boxPairs(:,2)==otherframes(frameInObjIndx));</span>
+    <span class="comment">%                 matched_mat(feat_indx) = 1;</span>
+    <span class="comment">%                 found_frame_indx(feat_indx)=frameInObjIndx;</span>
+    <span class="comment">%             end</span>
+    <span class="comment">%         end</span>
+    <span class="comment">%     end</span>
+    <span class="comment">%     clear features_subtask</span>
+    <span class="comment">% end</span>
+
+    <span class="keyword">for</span> task_img=1:size(features,1)
+        features_subtask(:,:)=single(features(task_img,:,:));
+        [boxPairs, matchmetric] = matchFeatures(features_new, features_subtask',<span class="string">'Unique'</span>,true,<span class="string">'MatchThreshold'</span>,100);
+</pre><pre>   figure;
+   matchedBoxPoints = corners(boxPairs(:, 1), :);
+   matchedScenePoints = corners(boxPairs(:, 2), :);
+   showMatchedFeatures(img, img,...
+       matchedBoxPoints, matchedScenePoints, 'montage')
+   title(strcat('Image',int2str(j),' and Image', int2str(i)))</pre><pre class="codeinput">        <span class="keyword">for</span> feat_indx=1:length(indx)
+            index_obj = indx(feat_indx);
+            otherframes=objs(find(objs(:,index_obj)~=0),index_obj);<span class="comment">% get list of valid features in same object</span>
+
+            <span class="keyword">for</span> frameInObjIndx=length(otherframes):-1:1
+                frame_id=otherframes(frameInObjIndx);
+                <span class="keyword">if</span> length(find(boxPairs(:,2)==frame_id))&gt;0
+                    matched_mat(feat_indx) = 1;
+                    found_frame_indx(task_img,feat_indx)=otherframes(frameInObjIndx);
+                    indx1=find(boxPairs(:,2)==found_frame_indx(task_img,feat_indx));
+                    frame=boxPairs(indx1,1);
+                    pos(task_img,:,feat_indx)=corners.Location(frame,:);
+                    index_matched_feat(task_img,feat_indx)=frame;
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+        <span class="keyword">if</span> handfeature~=0 <span class="comment">%if the demos have a hand in each image</span>
+            [P_hand] = gethandfeatures (fileparts(images_path));
+            <span class="keyword">if</span> length(P_hand)~=0
+                matched_mat(length(indx))=1;
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+</pre><pre class="codeoutput">loading yolo...
+extracting tags for each image...
+tasks\handover\results
+['tasks\\handover\\results\\img1.jpg']
+tasks\handover\results\img1.jpg
+img1.jpg in 3.66 seconds: 1 classes found!
+hand with 0.92 confidence
+AVG Confidence: 0.92 Count: 1
+[[217, 501, 335, 275, 0.9236892461776733]]
+loading yolo...
+extracting tags for each image...
+tasks\handover\results
+['tasks\\handover\\results\\img1.jpg']
+tasks\handover\results\img1.jpg
+img1.jpg in 3.73 seconds: 1 classes found!
+hand with 0.92 confidence
+AVG Confidence: 0.92 Count: 1
+[[217, 501, 335, 275, 0.9236892461776733]]
+loading yolo...
+extracting tags for each image...
+tasks\handover\results
+['tasks\\handover\\results\\img1.jpg']
+tasks\handover\results\img1.jpg
+img1.jpg in 3.49 seconds: 1 classes found!
+hand with 0.92 confidence
+AVG Confidence: 0.92 Count: 1
+[[217, 501, 335, 275, 0.9236892461776733]]
+loading yolo...
+extracting tags for each image...
+tasks\handover\results
+['tasks\\handover\\results\\img1.jpg']
+tasks\handover\results\img1.jpg
+img1.jpg in 3.51 seconds: 1 classes found!
+hand with 0.92 confidence
+AVG Confidence: 0.92 Count: 1
+[[217, 501, 335, 275, 0.9236892461776733]]
+loading yolo...
+extracting tags for each image...
+tasks\handover\results
+['tasks\\handover\\results\\img1.jpg']
+tasks\handover\results\img1.jpg
+img1.jpg in 3.38 seconds: 1 classes found!
+hand with 0.92 confidence
+AVG Confidence: 0.92 Count: 1
+[[217, 501, 335, 275, 0.9236892461776733]]
+loading yolo...
+extracting tags for each image...
+tasks\handover\results
+['tasks\\handover\\results\\img1.jpg']
+tasks\handover\results\img1.jpg
+img1.jpg in 3.55 seconds: 1 classes found!
+hand with 0.92 confidence
+AVG Confidence: 0.92 Count: 1
+[[217, 501, 335, 275, 0.9236892461776733]]
+</pre><img vspace="5" hspace="5" src="testrobot_02.png" alt=""> <pre class="codeoutput">loading yolo...
+extracting tags for each image...
+tasks\handover\results
+['tasks\\handover\\results\\img1.jpg', 'tasks\\handover\\results\\img2.jpg', 'tasks\\handover\\results\\img2_1.jpg']
+tasks\handover\results\img1.jpg
+img1.jpg in 3.5 seconds: 1 classes found!
+hand with 0.92 confidence
+tasks\handover\results\img2.jpg
+img2.jpg in 3.02 seconds: 1 classes found!
+hand with 0.33 confidence
+tasks\handover\results\img2_1.jpg
+img2_1.jpg in 2.87 seconds: 0 classes found!
+AVG Confidence: 0.63 Count: 2
+[[217, 501, 335, 275, 0.9236892461776733], [167, 623, 446, 236, 0.33214887976646423], []]
+loading yolo...
+extracting tags for each image...
+tasks\handover\results
+['tasks\\handover\\results\\img1.jpg', 'tasks\\handover\\results\\img2.jpg', 'tasks\\handover\\results\\img2_1.jpg']
+tasks\handover\results\img1.jpg
+img1.jpg in 3.65 seconds: 1 classes found!
+hand with 0.92 confidence
+tasks\handover\results\img2.jpg
+img2.jpg in 3.34 seconds: 1 classes found!
+hand with 0.33 confidence
+tasks\handover\results\img2_1.jpg
+img2_1.jpg in 3.4 seconds: 0 classes found!
+AVG Confidence: 0.63 Count: 2
+[[217, 501, 335, 275, 0.9236892461776733], [167, 623, 446, 236, 0.33214887976646423], []]
+loading yolo...
+extracting tags for each image...
+tasks\handover\results
+['tasks\\handover\\results\\img1.jpg', 'tasks\\handover\\results\\img2.jpg', 'tasks\\handover\\results\\img2_1.jpg']
+tasks\handover\results\img1.jpg
+img1.jpg in 3.67 seconds: 1 classes found!
+hand with 0.92 confidence
+tasks\handover\results\img2.jpg
+img2.jpg in 3.11 seconds: 1 classes found!
+hand with 0.33 confidence
+tasks\handover\results\img2_1.jpg
+img2_1.jpg in 3.01 seconds: 0 classes found!
+AVG Confidence: 0.63 Count: 2
+[[217, 501, 335, 275, 0.9236892461776733], [167, 623, 446, 236, 0.33214887976646423], []]
+loading yolo...
+extracting tags for each image...
+tasks\handover\results
+['tasks\\handover\\results\\img1.jpg', 'tasks\\handover\\results\\img2.jpg', 'tasks\\handover\\results\\img2_1.jpg']
+tasks\handover\results\img1.jpg
+img1.jpg in 3.8 seconds: 1 classes found!
+hand with 0.92 confidence
+tasks\handover\results\img2.jpg
+img2.jpg in 3.14 seconds: 1 classes found!
+hand with 0.33 confidence
+tasks\handover\results\img2_1.jpg
+img2_1.jpg in 3.07 seconds: 0 classes found!
+AVG Confidence: 0.63 Count: 2
+[[217, 501, 335, 275, 0.9236892461776733], [167, 623, 446, 236, 0.33214887976646423], []]
+loading yolo...
+extracting tags for each image...
+tasks\handover\results
+['tasks\\handover\\results\\img1.jpg', 'tasks\\handover\\results\\img2.jpg', 'tasks\\handover\\results\\img2_1.jpg']
+tasks\handover\results\img1.jpg
+img1.jpg in 3.5 seconds: 1 classes found!
+hand with 0.92 confidence
+tasks\handover\results\img2.jpg
+img2.jpg in 3.02 seconds: 1 classes found!
+hand with 0.33 confidence
+tasks\handover\results\img2_1.jpg
+img2_1.jpg in 3.21 seconds: 0 classes found!
+AVG Confidence: 0.63 Count: 2
+[[217, 501, 335, 275, 0.9236892461776733], [167, 623, 446, 236, 0.33214887976646423], []]
+loading yolo...
+extracting tags for each image...
+tasks\handover\results
+['tasks\\handover\\results\\img1.jpg', 'tasks\\handover\\results\\img2.jpg', 'tasks\\handover\\results\\img2_1.jpg']
+tasks\handover\results\img1.jpg
+img1.jpg in 3.58 seconds: 1 classes found!
+hand with 0.92 confidence
+tasks\handover\results\img2.jpg
+img2.jpg in 3.13 seconds: 1 classes found!
+hand with 0.33 confidence
+tasks\handover\results\img2_1.jpg
+img2_1.jpg in 3.06 seconds: 0 classes found!
+AVG Confidence: 0.63 Count: 2
+[[217, 501, 335, 275, 0.9236892461776733], [167, 623, 446, 236, 0.33214887976646423], []]
+</pre><img vspace="5" hspace="5" src="testrobot_05.png" alt=""> <h2 id="7">transforming frames</h2><pre class="codeinput">    <span class="comment">%transform the needed features to frames s_new A,b</span>
+    <span class="keyword">if</span> sum(matched_mat)&lt;length(indx)
+        imshow(img);
+        imwrite(img,images_path); <span class="comment">%failed</span>
+        disp(<span class="string">'failed'</span>)
+
+    <span class="keyword">else</span>
+        lengthim = size(image,1);
+        widthim = size(image,2);
+        cntr_real=[cam_pos(1),cam_pos(2),cam_posrel(3)];
+        cntr_im=[widthim/2,lengthim/2];
+        length_real=2*cam_posrel(3)*tan(pi/6);
+        width_real=length_real*widthim/lengthim;
+
+        s_new=struct(<span class="string">'p'</span>,struct(<span class="string">'A'</span>,[],<span class="string">'b'</span>,[]));
+        <span class="comment">%if the identified frame if the relevant one itself, then just convert</span>
+        <span class="comment">%s as is</span>
+        <span class="keyword">for</span> feat_indx=1:length(indx)
+            <span class="keyword">if</span> handfeature~=0 &amp;&amp; feat_indx==length(indx)
+                s_new.p(feat_indx).A=P_hand(1).A;
+                s_new.p(feat_indx).b=P_hand(1).b;
+            <span class="keyword">else</span>
+                most_common_frame=mode(found_frame_indx(:,feat_indx));
+                <span class="keyword">if</span> most_common_frame==0
+                    a=found_frame_indx~=0;
+                    most_common_frame=mode(found_frame_indx(a(:,feat_indx),feat_indx));
+                <span class="keyword">end</span>
+                most_common_frame_indx=find(found_frame_indx(:,feat_indx)==most_common_frame);
+                most_common_frame_indx=most_common_frame_indx(1);
+                features_subtask(:,:)=single(features(most_common_frame_indx,:,:));
+                boxPairs = matchFeatures(features_new, features_subtask',<span class="string">'Unique'</span>,true,<span class="string">'MatchThreshold'</span>,100);
+                indx1=find(boxPairs(:,2)==most_common_frame);
+                frame=boxPairs(indx1,1);
+                <span class="keyword">if</span> found_frame_indx(most_common_frame_indx,feat_indx)==leadFrames(indx(feat_indx))
+                    <span class="comment">%         if found_frame_indx(feat_indx) == 1</span>
+                    s_new.p(feat_indx).b=[0;corners.Location(frame,:)'];
+                    a=corners.Orientation(frame ,1);
+                    <span class="comment">%forming the rotation matrix</span>
+                    s_new.p(feat_indx).A=[[1,0,0];[0,cos(a), sin(a)];[0,-sin(a),cos(a)]];
+                    <span class="comment">%         end</span>
+                    index(feat_indx)=mode(found_frame_indx(find(found_frame_indx(:,1)~=0),feat_indx));
+                <span class="keyword">else</span>
+                    <span class="comment">%need to do transformation</span>
+                    org_indx=leadFrames(indx(feat_indx));
+
+                    <span class="comment">%tranform from real to pixel</span>
+                    tempx=-(-cntr_im(1)+(s(most_common_frame_indx).p(org_indx).b(3)-cntr_real(2)).*(widthim)./width_real);
+                    tempy=-(-cntr_im(2)+(s(most_common_frame_indx).p(org_indx).b(2)-cntr_real(1)).*(lengthim)./length_real);
+                    s(most_common_frame_indx).p(org_indx).b(2:3)=[tempx,tempy];
+                    temp=s(most_common_frame_indx).p(org_indx).A(3,:);
+                    s(most_common_frame_indx).p(org_indx).A(3,:)=s(most_common_frame_indx).p(org_indx).A(2,:);
+                    s(most_common_frame_indx).p(org_indx).A(2,:)=temp;
+                    s(most_common_frame_indx).p(org_indx).A(:,3)=s(most_common_frame_indx).p(org_indx).A(:,3).*-1;
+                    s(most_common_frame_indx).p(org_indx).A=[[s(most_common_frame_indx).p(org_indx).A;[0,0,0]],[0;0;0;1]];
+
+                    tempx=-(-cntr_im(1)+(s(most_common_frame_indx).p(most_common_frame).b(3)-cntr_real(2)).*(widthim)./width_real);
+                    tempy=-(-cntr_im(2)+(s(most_common_frame_indx).p(most_common_frame).b(2)-cntr_real(1)).*(lengthim)./length_real);
+                    s(most_common_frame_indx).p(most_common_frame).b(2:3)=[tempx,tempy];
+                    temp=s(most_common_frame_indx).p(most_common_frame).A(3,:);
+                    s(most_common_frame_indx).p(most_common_frame).A(3,:)=s(most_common_frame_indx).p(most_common_frame).A(2,:);
+                    s(most_common_frame_indx).p(most_common_frame).A(2,:)=temp;
+                    s(most_common_frame_indx).p(most_common_frame).A(:,3)=s(most_common_frame_indx).p(most_common_frame).A(:,3).*-1;
+                    s(most_common_frame_indx).p(most_common_frame).A=[[s(most_common_frame_indx).p(most_common_frame).A;[0,0,0]],[0;0;0;1]];
+
+                    <span class="comment">%get the original index</span>
+                    Rab=[[1,0,0];s(most_common_frame_indx).p(org_indx).b(2:3),s(most_common_frame_indx).p(org_indx).A(2:3,2:3)];
+                    most_common_frame=mode(found_frame_indx(find(found_frame_indx(:,1)~=0),feat_indx));
+                    Rac=[[1,0,0];s(most_common_frame_indx).p(most_common_frame).b(2:3),s(most_common_frame_indx).p(most_common_frame).A(2:3,2:3)];
+
+                    current_b =[corners.Location(frame,:)'];
+                    a=corners.Orientation(frame,1);
+                    current_A=[[cos(a), sin(a)];[-sin(a),cos(a)]];
+
+                    Rac_new=[[1,0,0];current_b,current_A];
+                    Rab_new=Rac_new*inv(Rac)*Rab;
+
+                    s_new.p(feat_indx).b=[0; Rab_new(2:3,1)];
+                    Rab_new(2:3,1)=[0,0];
+                    s_new.p(feat_indx).A=Rab_new;
+
+                    <span class="comment">%the detected redundant frame</span>
+                    p.b=[0;corners.Location(frame,:)'];
+                    a=corners.Orientation(frame ,1);
+                    <span class="comment">%forming the rotation matrix</span>
+                    p.A=[[1,0,0];[0,cos(a), sin(a)];[0,-sin(a),cos(a)]];
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+        returnval=1;
+
+        <span class="comment">%convert pararameters</span>
+        <span class="keyword">for</span> obj_group=1:length(leadFrames)
+            <span class="keyword">for</span> iter=1:length(s_new.p)
+                pt_x(iter)=length_real*(cntr_im(2)-s_new.p(iter).b(3))/lengthim+cntr_real(1);
+                pt_y(iter)=width_real*(cntr_im(1)-s_new.p(iter).b(2))/widthim+cntr_real(2);
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+        <span class="keyword">for</span> iter=1:length(s_new.p)
+            s_new.p(iter).b(2)=pt_x(iter);
+            s_new.p(iter).b(3)=pt_y(iter);
+            s_new.p(iter).b(4)=0;
+
+            temp=s_new.p(iter).A(2,:);
+            s_new.p(iter).A(2,:)=s_new.p(iter).A(3,:);
+            s_new.p(iter).A(3,:)=temp;
+            s_new.p(iter).A(:,3)=s_new.p(iter).A(:,3).*-1;
+            s_new.p(iter).A=[[s_new.p(iter).A;[0,0,0]],[0;0;0;1]];
+        <span class="keyword">end</span>
+
+        <span class="comment">%transform the needed features to frames s_new A,b</span>
+        <span class="keyword">if</span> sum(matched_mat)&lt;length(indx)
+            imshow(img);
+            imwrite(img,images_path);
+        <span class="keyword">else</span>
+</pre><pre class="codeinput">            <span class="comment">%     s_new=struct('p',struct('A',[],'b',[]));</span>
+            <span class="comment">%     %if the identified frame if the relevant one itself, then just convert</span>
+            <span class="comment">%     %s as is</span>
+            <span class="comment">%     for feat_indx=1:length(indx)</span>
+            <span class="comment">%             s_new.p(feat_indx).b=[0;corners.Location(boxPairs(index_matched_feat(feat_indx),1),:)'];</span>
+            <span class="comment">%             a=corners.Orientation(boxPairs(index_matched_feat(feat_indx),1));</span>
+            <span class="comment">%             %forming the rotation matrix</span>
+            <span class="comment">%             s_new.p(feat_indx).A=[[1,0,0];[0,cos(a), sin(a)];[0,-sin(a),cos(a)]];</span>
+            <span class="comment">%</span>
+            <span class="comment">%     end</span>
+
+            nbFrames_new = length(indx);
+
+            <span class="comment">% obtain the features for the given demonstration id</span>
+            <span class="keyword">for</span> n=1:nbFrames_new
+                pTmp(n).b = s_new.p(n).b ;
+                pTmp(n).A = s_new.p(n).A ;
+            <span class="keyword">end</span>
+
+            indx1=indx;
+            indx=leadFrames(indx);
+            <span class="comment">%get GMR in main frame</span>
+            <span class="keyword">for</span> m=1:nbFrames_new
+                <span class="comment">%             MuTmp(1:2,:,m) = pTmp(m).A(2:end,2:end) * MuGMR(1:2,:, indx(m)) + repmat(pTmp(m).b(2:4),1,size(MuGMR,2));</span>
+                <span class="comment">%             for t=1:size(MuGMR,2)</span>
+                <span class="comment">%                 SigmaTmp(:,:,t,m) = pTmp(m).A(2:4,2:4) * SigmaGMR(:,:,t,indx(m)) * pTmp(m).A(2:4,2:4)';</span>
+                <span class="comment">%             end</span>
+
+                MuTmp(1:2,:,m) = pTmp(m).A(2:3,2:3) * MuGMR(1:2,:,indx(m)) + repmat(pTmp(m).b(2:3),1,size(MuGMR,2));
+                <span class="keyword">for</span> t=1:model.nbData
+                    SigmaTmp(1:2,1:2,t,m) = pTmp(m).A(2:3,2:3) * SigmaGMR(1:2,1:2,t,leadFrames(m)) * pTmp(m).A(2:3,2:3)';
+                <span class="keyword">end</span>
+                <span class="keyword">if</span> model.nbVar&gt;3
+                    MuTmp(3:size(MuGMR,1),:,m) =  MuGMR(3:size(MuGMR,1),:,indx(m)) ;
+                    <span class="keyword">for</span> t=1:model.nbData
+                        SigmaTmp(3:size(MuTmp,1),3:size(MuTmp,1),t,m) = SigmaGMR(3:size(MuTmp,1),3:size(MuTmp,1),t,indx(m)) ;
+                    <span class="keyword">end</span>
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+</pre><h2 id="9">reproducing the path</h2><pre class="codeinput">            method =3;
+            MuTmp2=zeros(size(MuGMR,1),  model.nbData, model.nbFrames);
+            SigmaTmp2= zeros(size(MuGMR,1),size(MuGMR,1), model.nbData, model.nbFrames);
+            <span class="keyword">if</span> method ==1
+                <span class="comment">%FINDING THE CLOSEST RING POINT TO THE OTHER GAUSSIANS</span>
+                <span class="keyword">for</span> t=1:model.nbData
+                    <span class="keyword">for</span> m=1:length(leadFrames)
+                        <span class="keyword">if</span> model.orientless(indx(m))==1 &amp;&amp; length(leadFrames)&gt;1<span class="comment">%don't do for any frame</span>
+                            closestid=0;<span class="comment">%initialise</span>
+                            closestd=100000;
+
+                            <span class="keyword">for</span> k=1:length(leadFrames)
+                                <span class="keyword">if</span> model.orientless(indx(k))==0
+                                    d=sqrt((MuTmp(1,t,k)-pTmp(m).b(2))^2+(MuTmp(2,t,k)-pTmp(m).b(3))^2)-model.Mu_dohnut(t,indx(m));
+                                    <span class="keyword">if</span> closestd&gt;d
+                                        closestd=d;
+                                        closestid=k;
+                                    <span class="keyword">end</span>
+                                <span class="keyword">else</span>
+                                    <span class="keyword">if</span> k~=m
+                                        d=sqrt((pTmp((k)).b(2)-pTmp((m)).b(2))^2+(pTmp((k)).b(3)-pTmp((m)).b(3))^2)-model.Mu_dohnut(t,indx(k));
+                                        <span class="keyword">if</span> closestd&gt;d
+                                            closestd=d;
+                                            closestid=k;
+                                        <span class="keyword">end</span>
+                                    <span class="keyword">end</span>
+                                <span class="keyword">end</span>
+                            <span class="keyword">end</span>
+                            <span class="comment">%find the coordinates of the actual pint closest</span>
+                            MuTmp2(1:2,t,m)=(closestd/(closestd+model.Mu_dohnut(t,indx(m)))).*(pTmp(m).b(2:3)-MuTmp(1:2,t,closestid))+MuTmp(1:2,t,closestid);
+                            <span class="keyword">if</span> model.orientless(indx(closestid))==1
+                                MuTmp2(1:2,t,m)=pTmp(m).b(2:3)+(model.Mu_dohnut(t,indx(m))/(closestd+model.Mu_dohnut(t,indx(closestid)))).*[(pTmp((closestid)).b(2)-pTmp((m)).b(2));(pTmp((closestid)).b(3)-pTmp((m)).b(3))];
+                            <span class="keyword">end</span>
+                            eigenvectorsmall=[(pTmp((closestid)).b(2)-pTmp((m)).b(2)),(pTmp((closestid)).b(3)-pTmp((m)).b(3))];
+                            eigenvectorbig=[(pTmp((closestid)).b(3)-pTmp((m)).b(3)),-(pTmp((closestid)).b(2)-pTmp((m)).b(2))];
+                            V=[eigenvectorsmall;eigenvectorbig];
+                            D=[model.Sigma_dohnut(t,indx(m)),0;0,model.Sigma_dohnut(t,indx(m))*2];
+                            SigmaTmp2(1:2,1:2,t,m)=V*D*inv(V);
+
+                            <span class="comment">%                 SigmaTmp2(1:2,1:2,t,m)=[model.Sigma_dohnut(t,indx(m)),0;0,model.Sigma_dohnut(t,indx(m))];</span>
+                            <span class="keyword">if</span> model.nbVar&gt;3
+                                MuTmp2(3:model.nbVar-1,t,m)=MuTmp(3:end,t,m);
+                                SigmaTmp2(3:model.nbVar-1,3:model.nbVar-1,t,m)= SigmaTmp(3:end,3:end,t,m);
+                            <span class="keyword">end</span>
+                        <span class="keyword">else</span>
+                            MuTmp2(:,t,m)=MuTmp(:,t,m);
+                            SigmaTmp2(:,:,t,m)=SigmaTmp(:,:,t,m);
+                        <span class="keyword">end</span>
+                    <span class="keyword">end</span>
+                <span class="keyword">end</span>
+            <span class="keyword">elseif</span> method==2
+                <span class="keyword">for</span> t=1:model.nbData
+                    <span class="keyword">for</span> m=1:length(leadFrames)
+                        d=[];point=[];
+                        <span class="keyword">if</span> model.orientless(indx(m))==1 &amp;&amp; length(leadFrames)&gt;1<span class="comment">%don't do for any frame</span>
+                            <span class="keyword">for</span> k=1:length(leadFrames)
+                                <span class="comment">%calculate distance between each 2 gaussians</span>
+                                <span class="keyword">if</span> model.orientless(indx(k))==0
+                                    d(k)=abs(sqrt((MuTmp(1,t,k)-pTmp(m).b(2))^2+(MuTmp(2,t,k)-pTmp(m).b(3))^2)-model.Mu_dohnut(t,indx(m)));
+                                    <span class="comment">%find the closest point on the ring to each gaus</span>
+                                    point(:,k)=(d(k)/(d(k)+model.Mu_dohnut(t,indx(m)))).*(pTmp(m).b(2:3)-MuTmp(1:2,t,k))+MuTmp(1:2,t,k);
+                                <span class="keyword">else</span>
+                                    <span class="keyword">if</span> k~=m
+                                        d(k)=abs(sqrt((pTmp(k).b(2)-pTmp(m).b(2))^2+(pTmp((k)).b(3)-pTmp((m)).b(3))^2)-model.Mu_dohnut(t,indx(k))-model.Mu_dohnut(t,indx(m)));
+                                        point(:,k)=(model.Mu_dohnut(t,indx(m)))/(d(k)+model.Mu_dohnut(t,indx(k))+model.Mu_dohnut(t,indx(m))).*(pTmp(k).b(2:3)-pTmp(m).b(2:3))+pTmp(m).b(2:3);
+                                        <span class="comment">%                                 point(:,k)=pTmp(m).b(2:3)+(model.Mu_dohnut(t,indx(m))/(d(k)+model.Mu_dohnut(t,indx(k)))).*[(pTmp((k)).b(2)-pTmp((m)).b(2));(pTmp((k)).b(3)-pTmp((m)).b(3))];</span>
+                                    <span class="keyword">end</span>
+                                <span class="keyword">end</span>
+                            <span class="keyword">end</span>
+
+                            <span class="comment">%average the points weighted by the sigma</span>
+                            dd=1./d;
+
+                            <span class="keyword">for</span> k=1:length(leadFrames)
+                                <span class="keyword">if</span> model.orientless(indx(k))==1 &amp;&amp; k~=m
+                                    <span class="comment">%                             temp(1:2,1:2,t,m)=[model.Sigma_dohnut(t,indx(m)),0;0,model.Sigma_dohnut(t,indx(m))];</span>
+                                    <span class="comment">%                             SigmaTmp2(:,:,t,m)=SigmaTmp2(:,:,t,m)+inv(temp(:,:,t,indx(k)));</span>
+                                    <span class="comment">%                             MuTmp2(:,t,m) = MuTmp2(:,t,m) +temp(:,:,t,indx(k)) \ point(:,k);</span>
+                                    MuTmp2(1:2,t,m)=MuTmp2(1:2,t,m)+point(:,k)*dd(k)/sum(dd(dd~=Inf));
+                                <span class="keyword">elseif</span> model.orientless(indx(k))==0
+                                    <span class="comment">%                             SigmaTmp2(:,:,t,m)=SigmaTmp2(:,:,t,m)+inv(SigmaTmp(:,:,t,k));</span>
+                                    <span class="comment">%                             MuTmp2(:,t,m) = MuTmp2(:,t,m) + SigmaTmp(:,:,t,k) \ point(:,k);</span>
+                                    MuTmp2(1:2,t,m)=MuTmp2(1:2,t,m)+point(:,k)*(dd(k)/sum(dd(dd~=Inf)));
+                                <span class="keyword">end</span>
+                            <span class="keyword">end</span>
+                            MuTmp2(1:2,t,m)=MuTmp2(1:2,t,m);
+                            SigmaTmp2(1:2,1:2,t,m)=[[model.Sigma_dohnut(t,indx(m)),0];[0,model.Sigma_dohnut(t,indx(m))]];
+                            <span class="comment">%                     SigmaTmp2(:,:,t,m) = inv(SigmaTmp2(:,:,t,m));</span>
+                            <span class="comment">%                     MuTmp2(:,t,m) = SigmaTmp2(:,:,t,m)  * MuTmp2(:,t,m);</span>
+                            <span class="keyword">if</span> model.nbVar&gt;3
+                                MuTmp2(3:model.nbVar-1,t,m)=MuTmp(3:end,t,m);
+                                SigmaTmp2(3:model.nbVar-1,3:model.nbVar-1,t,m)= SigmaTmp(3:end,3:end,t,m);
+                            <span class="keyword">end</span>
+                        <span class="keyword">else</span>
+                            MuTmp2(:,t,m)=MuTmp(:,t,m);
+                            SigmaTmp2(:,:,t,m)=SigmaTmp(:,:,t,m);
+                        <span class="keyword">end</span>
+                    <span class="keyword">end</span>
+                <span class="keyword">end</span>
+            <span class="keyword">elseif</span> method ==3
+                <span class="keyword">for</span> m=1:length(indx)
+                    mode=[];
+                    <span class="keyword">for</span> t=1:model.nbData
+                        d=zeros(1,length(indx));point=zeros(2,length(indx));
+                        <span class="keyword">if</span> model.orientless(indx1(m))==1 &amp;&amp; length(indx)&gt;1<span class="comment">%don't do for any frame</span>
+                            <span class="keyword">for</span> k=1:length(indx)
+                                <span class="comment">%calculate distance between each 2 gaussians</span>
+                                <span class="keyword">if</span> model.orientless(indx1(k))==0
+                                    d(k)=abs(sqrt((MuTmp(1,t,k)-pTmp(m).b(2))^2+(MuTmp(2,t,k)-pTmp(m).b(3))^2)-model.Mu_dohnut(t,indx1(m)));
+                                    <span class="comment">%find the closest point on the ring to each gaus</span>
+                                    point(:,k)=(d(k)/(d(k)+model.Mu_dohnut(t,indx1(m)))).*(pTmp(m).b(2:3)-MuTmp(1:2,t,k))+MuTmp(1:2,t,k);
+                                <span class="keyword">else</span>
+                                    <span class="keyword">if</span> k~=m
+                                        fdist=sqrt((pTmp(k).b(2)-pTmp(m).b(2))^2+(pTmp((k)).b(3)-pTmp((m)).b(3))^2);
+                                        <span class="keyword">if</span> model.Mu_dohnut(t,indx1(k))+model.Mu_dohnut(t,indx1(m))&lt;fdist <span class="comment">%2 external circles</span>
+                                            d(k)=fdist-model.Mu_dohnut(t,indx1(k))-model.Mu_dohnut(t,indx1(m));
+                                            point(:,k)=(model.Mu_dohnut(t,indx1(m)))/(fdist).*(pTmp(k).b(2:3)-pTmp(m).b(2:3))+pTmp(m).b(2:3);
+
+                                            mode(t,k)=1;
+                                        <span class="keyword">elseif</span> model.Mu_dohnut(t,indx1(k))+model.Mu_dohnut(t,indx1(m))&gt;=fdist &amp;&amp; abs(model.Mu_dohnut(t,indx1(k))-model.Mu_dohnut(t,indx1(m)))&lt;=fdist <span class="comment">%2 intersecting circles</span>
+                                            temp1=model.Mu_dohnut(t,indx1(m))-(model.Mu_dohnut(t,indx1(m))+model.Mu_dohnut(t,indx1(k))-fdist)/2;
+                                            temp2=sqrt(model.Mu_dohnut(t,indx1(m))^2-temp1^2);
+                                            <span class="keyword">if</span> indx1(m)&lt;indx1(k)
+                                                transmat=[0,-1;+1,0];
+                                            <span class="keyword">else</span>
+                                                transmat=[0,1;-1,0];
+                                            <span class="keyword">end</span>
+
+                                            x=(fdist^2-model.Mu_dohnut(t,indx1(k))^2+model.Mu_dohnut(t,indx1(m))^2)/(2*fdist);
+                                            y=sqrt(model.Mu_dohnut(t,indx1(m))^2-x^2);
+
+                                            d(k)=0.00000000000000000001;
+                                            point(:,k)=pTmp(m).b(2:3)+x.*(pTmp(k).b(2:3)-pTmp(m).b(2:3))./fdist+(transmat*(pTmp(k).b(2:3)-pTmp(m).b(2:3))).*y./fdist;
+                                            mode(t,k)=2;
+                                        <span class="keyword">elseif</span> abs(model.Mu_dohnut(t,indx1(k))-model.Mu_dohnut(t,indx1(m)))&gt;fdist
+                                            <span class="keyword">if</span> model.Mu_dohnut(t,indx1(m))&gt;model.Mu_dohnut(t,indx1(k))
+                                                d(k) = abs(model.Mu_dohnut(t,indx1(m))-model.Mu_dohnut(t,indx1(k))-fdist); <span class="comment">%distance between two circles</span>
+                                                point(:,k)=pTmp(m).b(2:3)+(pTmp(k).b(2:3)-pTmp(m).b(2:3))*model.Mu_dohnut(t,indx1(m))/fdist;
+                                            <span class="keyword">else</span>
+                                                d(k) =abs( model.Mu_dohnut(t,indx1(k))-model.Mu_dohnut(t,indx1(m))-fdist);<span class="comment">%distance between two circles</span>
+                                                point(:,k)=pTmp(m).b(2:3)+(-pTmp(k).b(2:3)+pTmp(m).b(2:3))*model.Mu_dohnut(t,indx1(m))/fdist;
+                                            <span class="keyword">end</span>
+                                            mode(t,k)=3;
+                                        <span class="keyword">end</span>
+                                    <span class="keyword">end</span>
+                                <span class="keyword">end</span>
+                            <span class="keyword">end</span>
+
+                            dd=1./d;
+
+                            <span class="keyword">for</span> k=1:length(indx)
+                                <span class="keyword">if</span> k~=m
+                                    MuTmp2(1:2,t,m)=MuTmp2(1:2,t,m)+point(:,k)*(dd(k)/(sum(dd(find(dd~=dd(m))))));
+                                <span class="keyword">end</span>
+                            <span class="keyword">end</span>
+                            MuTmp2(1:2,t,m)=MuTmp2(1:2,t,m);
+                            SigmaTmp2(1:2,1:2,t,m)=[[model.Sigma_dohnut(t,indx1(m)),0];[0,model.Sigma_dohnut(t,indx1(m))]];
+                            <span class="keyword">if</span> model.nbVar&gt;3
+                                MuTmp2(3:model.nbVar-1,t,m)=MuTmp(3:end,t,m);
+                                SigmaTmp2(3:model.nbVar-1,3:model.nbVar-1,t,m)= SigmaTmp(3:end,3:end,t,m);
+                            <span class="keyword">end</span>
+                        <span class="keyword">else</span>
+                            MuTmp2(:,t,m)=MuTmp(:,t,m);
+                            SigmaTmp2(:,:,t,m)=SigmaTmp(:,:,t,m);
+                        <span class="keyword">end</span>
+                    <span class="keyword">end</span>
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+
+            <span class="keyword">for</span> t=1:size(MuGMR,2)
+                SigmaP = zeros(model.nbVar-1);
+                MuP = zeros(model.nbVar-1, 1);
+                <span class="keyword">for</span> m=1:nbFrames_new
+                    SigmaP = SigmaP + inv(SigmaTmp2(:,:,t,m));
+                    MuP = MuP + SigmaTmp2(:,:,t,m)\ MuTmp2(:,t,m);
+                <span class="keyword">end</span>
+                r(1).Sigma(:,:,t) = inv(SigmaP);
+                r(1).Data(:,t) = r(1).Sigma(:,:,t) * MuP;
+            <span class="keyword">end</span>
+</pre><pre class="codeinput">        <span class="keyword">end</span>
+        imshow(image); hold <span class="string">on</span>;
+        <span class="keyword">for</span> m=1:nbFrames_new
+            tempx=-(-cntr_im(1)+(pTmp(m).b(3)-cntr_real(2)).*(widthim)./width_real);
+            tempy=-(-cntr_im(2)+(pTmp(m).b(2)-cntr_real(1)).*(lengthim)./length_real);
+            plot(tempx, tempy,<span class="string">'.'</span>,<span class="string">'markersize'</span>,30);
+            plot([tempx tempx+pTmp(m).A(2,3)], [tempy tempy+pTmp(m).A(3,3)], <span class="string">'-'</span>,<span class="string">'linewidth'</span>,6);
+
+            <span class="comment">%         plot(pTmp(m).b(2), pTmp(m).b(3), '.','markersize',45,'color','yellow');</span>
+            <span class="comment">%         plot([pTmp(m).b(2) pTmp(m).b(2)+12*pTmp(m).A(2,3)], [pTmp(m).b(3) pTmp(m).b(3)+12*pTmp(m).A(3,3)], 'MarkerSize',30,'color','black');</span>
+
+        <span class="keyword">end</span>
+        <span class="comment">%plot the redundant frame if any</span>
+        <span class="keyword">if</span> exist(<span class="string">'p'</span>)
+            plot(p.b(2), p.b(3),<span class="string">'.'</span>,<span class="string">'markersize'</span>,30);
+            plot([p.b(2) p.b(2)+p.A(2,3)], [p.b(3) p.b(3)+p.A(3,3)], <span class="string">'-'</span>,<span class="string">'linewidth'</span>,6);
+        <span class="keyword">end</span>
+
+        tempx=-(-cntr_im(1)+(r(1).Data(2,:)-cntr_real(2)).*(widthim)./width_real);
+        tempy=-(-cntr_im(2)+(r(1).Data(1,:)-cntr_real(1)).*(lengthim)./length_real);
+        plot(tempx, tempy,<span class="string">'-'</span>,<span class="string">'linewidth'</span>,1.5,<span class="string">'color'</span>,<span class="string">'red'</span>);
+        <span class="comment">%     plot(r(1).Data(1,:),r(1).Data(2,:), 'color','white','linewidth',2.0);</span>
+        <span class="comment">%     plot(current_b(1),current_b(2), '.','markersize',35,'color','green')</span>
+
+<span class="comment">%         % do task</span>
+<span class="comment">%         returnval=vrep.simxSetIntegerSignal(id,'gripperclose',0,vrep.simx_opmode_oneshot_wait);</span>
+<span class="comment">%         for ind=1:size(MuGMR,2)</span>
+<span class="comment">%             [returnval] =vrep.simxSetObjectPosition(id, target, -1, r(1).Data(1:3,ind),...</span>
+<span class="comment">%                 vrep.simx_opmode_oneshot_wait);</span>
+<span class="comment">%</span>
+<span class="comment">%             %gripper</span>
+<span class="comment">%             if size(r(1).Data,1)&gt;3</span>
+<span class="comment">%                 if r(1).Data(4,ind)&gt;0.5</span>
+<span class="comment">%                     returnval=vrep.simxSetIntegerSignal(id,'gripperclose',1,vrep.simx_opmode_oneshot_wait);</span>
+<span class="comment">%                 else</span>
+<span class="comment">%                     returnval=vrep.simxSetIntegerSignal(id,'gripperclose',0,vrep.simx_opmode_oneshot_wait);</span>
+<span class="comment">%                 end</span>
+<span class="comment">%             end</span>
+<span class="comment">%         end</span>
+<span class="comment">%         %default</span>
+<span class="comment">%         returnval=vrep.simxSetIntegerSignal(id,'gripperclose',0,vrep.simx_opmode_oneshot_wait);</span>
+<span class="comment">%         returnCode=vrep.simxSetObjectPosition(id,target,-1, target_init_pos,...</span>
+<span class="comment">%             vrep.simx_opmode_oneshot_wait);</span>
+
+        saveas(gcf,strcat(task_path, <span class="string">'\results\img2_'</span>, int2str(testiter), <span class="string">'.jpg'</span>));
+    <span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="testrobot_03.png" alt=""> <pre class="codeoutput error">Index exceeds the number of array elements (0).
+
+Error in testrobot (line 214)
+                most_common_frame_indx=most_common_frame_indx(1);
+</pre><pre class="codeinput"><span class="keyword">end</span>
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2020a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% initialisation
+clc; clear all; close all;
+
+currentFolder='C:\Users\elzaatas\OneDrive - Coventry University\cobot-intuitive-teach\GenLfD-tutorial\';
+cd(currentFolder);
+addpath(genpath(currentFolder));
+
+handfeature=0;
+
+task='handover';
+bool_Simulation=0;
+if bool_Simulation==1
+    task_path = strcat('Simulation\data\',task);
+else
+    task_path = strcat('tasks\',task);
+end
+boolLive=false;
+vrep=remApi('remoteApi');
+vrep.simxFinish(-1);
+id=vrep.simxStart('127.0.0.1',19997,true,true,1000,5); % connect simulation to matlab
+if id < 0
+    system(strcat(task_path,"\RobotScene.ttt")); % open simulation software if not already open
+end
+for nbtry=1:100
+    vrep=remApi('remoteApi');
+    vrep.simxFinish(-1);
+    id=vrep.simxStart('127.0.0.1',19997,true,true,5000,5); % connect simulation to matlab
+    if id >= 0
+        returnCode=vrep.simxStartSimulation(id,vrep.simx_opmode_oneshot); % start simulation
+        break;
+    end
+end
+returnCode=vrep.simxStartSimulation(id,vrep.simx_opmode_oneshot); % start simulation
+
+% get object handles from simulation
+[camerro,vision1] = vrep.simxGetObjectHandle(id,'Vision_sensor0',...
+    vrep.simx_opmode_oneshot_wait); % the camera to read images from
+[camerro,target] = vrep.simxGetObjectHandle(id,'Target',...
+    vrep.simx_opmode_oneshot_wait);% the cobot's end effector
+[camerro,UR3_base] = vrep.simxGetObjectHandle(id,'UR3',...
+    vrep.simx_opmode_oneshot_wait);%the robot's base position
+[camerro,obj1] = vrep.simxGetObjectHandle(id,'obj1',...
+    vrep.simx_opmode_oneshot_wait);%the robot's base position
+[camerro,obj2] = vrep.simxGetObjectHandle(id,'obj2',...
+    vrep.simx_opmode_oneshot_wait);%the robot's base position
+
+%get position of fixed items
+[returnCode, cam_pos]=vrep.simxGetObjectPosition(id,vision1,-1,...
+    vrep.simx_opmode_oneshot_wait);
+[returnCode, cam_posrel]=vrep.simxGetObjectPosition(id,vision1,UR3_base,...
+    vrep.simx_opmode_oneshot_wait);
+[returnCode, target_init_pos]=vrep.simxGetObjectPosition(id,target,-1,...
+    vrep.simx_opmode_oneshot_wait);
+[returnCode, obj1_init_pos]=vrep.simxGetObjectPosition(id,obj1,-1,...
+    vrep.simx_opmode_oneshot_wait);
+[returnCode, obj2_init_pos]=vrep.simxGetObjectPosition(id,obj2,-1,...
+    vrep.simx_opmode_oneshot_wait);
+[returnCode, obj1_init_or]=vrep.simxGetObjectOrientation(id,obj1,-1,...
+    vrep.simx_opmode_oneshot_wait);
+[returnCode, obj2_init_or]=vrep.simxGetObjectOrientation(id,obj2,-1,...
+    vrep.simx_opmode_oneshot_wait);
+
+%% setting up test scene
+manual=0;
+nbTests= 100;
+for testiter=1:nbTests
+    if manual
+        trigger =input("Record image? y/n ",'s');
+        if trigger == 'y'
+            [returnCode,resolut,image]= vrep.simxGetVisionSensorImage2(id,vision1,0,vrep.simx_opmode_oneshot_wait);
+            imshow(image);
+        elseif trigger == 'n'
+            return;
+        else
+            fprintf('invalid input. Click either y or n followed by Enter.')
+        end
+        
+    else
+        %vary position +orientation of obj 1 and 2 randomly
+        scale=0.03;
+        posobj1=obj1_init_pos+(rand(1,3)*2-1).*[scale,scale,0];
+        posobj2=obj2_init_pos+(rand(1,3)*2-1).*[scale,scale,0];
+        
+        posobj2=obj2_init_pos+(rand(1,3)*2-1).*[scale,scale/5,0];
+        orobj1=[0,0,1].*rand(1,3)*3.1415*2;
+        orobj2=[0,0,1].*rand(1,3)*3.1415*2;
+        orobj2=[1/6,1/4,-1/4].*(rand(1,3)*2-1)*3.1415/2+[3.1415/2,0,-3.1415/2];
+        [returnCode]=vrep.simxSetObjectPosition(id,obj1,-1, posobj1,...
+            vrep.simx_opmode_oneshot_wait);
+        [returnCode]=vrep.simxSetObjectPosition(id,obj2,-1,posobj2,...
+            vrep.simx_opmode_oneshot_wait);
+        %         [returnCode]=vrep.simxSetObjectOrientation(id,obj1,-1, orobj1,...
+        %             vrep.simx_opmode_oneshot_wait);
+        [returnCode]=vrep.simxSetObjectOrientation(id,obj2,-1,orobj2,...
+            vrep.simx_opmode_oneshot_wait);
+        [returnCode,resolut,image]= vrep.simxGetVisionSensorImage2(id,vision1,0,vrep.simx_opmode_oneshot_wait);
+        imshow(image);
+    end
+    
+    img=rgb2gray(image);
+    %% detect features
+    corners = detectfeatures (img);
+    [features_new, corners]=extractFeatures(img, corners);
+    %detect hand features if any
+    %save image and then pass images path
+    images_path=strcat(task_path, '\results\img', int2str(testiter), '.jpg');
+    imwrite(image,images_path); %failed
+    
+    
+    imshow(image); hold on;
+    plot(corners.Location(:,1),corners.Location(:,2),'.','color','white','MarkerSize',30);
+    for k=1:length(corners)
+        plot([corners.Location(k,1),corners.Location(k,1)+10*sin(corners.Orientation(k))],[corners.Location(k,2),corners.Location(k,2)+10*cos(corners.Orientation(k))]...
+            ,'MarkerSize',25,'color','black');
+    end
+    hold off;
+    title(strcat('Demo Image ',int2str(i)));
+    
+    load(strcat(task_path,'\calib.mat'));
+    load(strcat(task_path,'\model.mat'));
+    load(strcat(task_path,'\features.mat'));
+    load(strcat(task_path,'\parameters.mat'));
+    
+    matched_mat=0;
+    bool_all_matched=ones(1,length(indx));
+    index_matched_feat=zeros(1,10);
+    %
+    % for task_img=1:size(features,1)
+    %     features_subtask(:,:)=single(features(task_img,:,:));
+    %     boxPairs = matchFeatures(features_new, features_subtask','Unique',true,'MatchThreshold',100);
+    %
+    %     for feat_indx=1:length(indx)
+    %         index_obj = indx(feat_indx);
+    %         otherframes=objs(find(objs(:,index_obj)~=0),index_obj);% get list of valid features in same object
+    %
+    %         for frameInObjIndx=length(otherframes):-1:1
+    %             frame_id=otherframes(frameInObjIndx);
+    %             if length(find(boxPairs(:,2)==frame_id))>0
+    %                 index_matched_feat(feat_indx)=find(boxPairs(:,2)==otherframes(frameInObjIndx));
+    %                 matched_mat(feat_indx) = 1;
+    %                 found_frame_indx(feat_indx)=frameInObjIndx;
+    %             end
+    %         end
+    %     end
+    %     clear features_subtask
+    % end
+    
+    for task_img=1:size(features,1)
+        features_subtask(:,:)=single(features(task_img,:,:));
+        [boxPairs, matchmetric] = matchFeatures(features_new, features_subtask','Unique',true,'MatchThreshold',100);
+        
+        %%%
+        %     figure;
+        %     matchedBoxPoints = corners(boxPairs(:, 1), :);
+        %     matchedScenePoints = corners(boxPairs(:, 2), :);
+        %     showMatchedFeatures(img, img,...
+        %         matchedBoxPoints, matchedScenePoints, 'montage')
+        %     title(strcat('Image',int2str(j),' and Image', int2str(i)))
+        %%%
+        
+        for feat_indx=1:length(indx)
+            index_obj = indx(feat_indx);
+            otherframes=objs(find(objs(:,index_obj)~=0),index_obj);% get list of valid features in same object
+            
+            for frameInObjIndx=length(otherframes):-1:1
+                frame_id=otherframes(frameInObjIndx);
+                if length(find(boxPairs(:,2)==frame_id))>0
+                    matched_mat(feat_indx) = 1;
+                    found_frame_indx(task_img,feat_indx)=otherframes(frameInObjIndx);
+                    indx1=find(boxPairs(:,2)==found_frame_indx(task_img,feat_indx));
+                    frame=boxPairs(indx1,1);
+                    pos(task_img,:,feat_indx)=corners.Location(frame,:);
+                    index_matched_feat(task_img,feat_indx)=frame;
+                end
+            end
+        end
+        
+        if handfeature~=0 %if the demos have a hand in each image
+            [P_hand] = gethandfeatures (fileparts(images_path));
+            if length(P_hand)~=0
+                matched_mat(length(indx))=1;
+            end
+        end
+    end
+    %% transforming frames
+    %transform the needed features to frames s_new A,b
+    if sum(matched_mat)<length(indx)
+        imshow(img);
+        imwrite(img,images_path); %failed
+        disp('failed')
+        
+    else
+        lengthim = size(image,1);
+        widthim = size(image,2);
+        cntr_real=[cam_pos(1),cam_pos(2),cam_posrel(3)];
+        cntr_im=[widthim/2,lengthim/2];
+        length_real=2*cam_posrel(3)*tan(pi/6);
+        width_real=length_real*widthim/lengthim;
+        
+        s_new=struct('p',struct('A',[],'b',[]));
+        %if the identified frame if the relevant one itself, then just convert
+        %s as is
+        for feat_indx=1:length(indx)
+            if handfeature~=0 && feat_indx==length(indx)
+                s_new.p(feat_indx).A=P_hand(1).A;
+                s_new.p(feat_indx).b=P_hand(1).b;
+            else
+                most_common_frame=mode(found_frame_indx(:,feat_indx));
+                if most_common_frame==0
+                    a=found_frame_indx~=0;
+                    most_common_frame=mode(found_frame_indx(a(:,feat_indx),feat_indx));
+                end
+                most_common_frame_indx=find(found_frame_indx(:,feat_indx)==most_common_frame);
+                most_common_frame_indx=most_common_frame_indx(1);
+                features_subtask(:,:)=single(features(most_common_frame_indx,:,:));
+                boxPairs = matchFeatures(features_new, features_subtask','Unique',true,'MatchThreshold',100);
+                indx1=find(boxPairs(:,2)==most_common_frame);
+                frame=boxPairs(indx1,1);
+                if found_frame_indx(most_common_frame_indx,feat_indx)==leadFrames(indx(feat_indx))
+                    %         if found_frame_indx(feat_indx) == 1
+                    s_new.p(feat_indx).b=[0;corners.Location(frame,:)'];
+                    a=corners.Orientation(frame ,1);
+                    %forming the rotation matrix
+                    s_new.p(feat_indx).A=[[1,0,0];[0,cos(a), sin(a)];[0,-sin(a),cos(a)]];
+                    %         end
+                    index(feat_indx)=mode(found_frame_indx(find(found_frame_indx(:,1)~=0),feat_indx));
+                else
+                    %need to do transformation
+                    org_indx=leadFrames(indx(feat_indx));
+                    
+                    %tranform from real to pixel
+                    tempx=-(-cntr_im(1)+(s(most_common_frame_indx).p(org_indx).b(3)-cntr_real(2)).*(widthim)./width_real);
+                    tempy=-(-cntr_im(2)+(s(most_common_frame_indx).p(org_indx).b(2)-cntr_real(1)).*(lengthim)./length_real);
+                    s(most_common_frame_indx).p(org_indx).b(2:3)=[tempx,tempy];
+                    temp=s(most_common_frame_indx).p(org_indx).A(3,:);
+                    s(most_common_frame_indx).p(org_indx).A(3,:)=s(most_common_frame_indx).p(org_indx).A(2,:);
+                    s(most_common_frame_indx).p(org_indx).A(2,:)=temp;
+                    s(most_common_frame_indx).p(org_indx).A(:,3)=s(most_common_frame_indx).p(org_indx).A(:,3).*-1;
+                    s(most_common_frame_indx).p(org_indx).A=[[s(most_common_frame_indx).p(org_indx).A;[0,0,0]],[0;0;0;1]];
+                    
+                    tempx=-(-cntr_im(1)+(s(most_common_frame_indx).p(most_common_frame).b(3)-cntr_real(2)).*(widthim)./width_real);
+                    tempy=-(-cntr_im(2)+(s(most_common_frame_indx).p(most_common_frame).b(2)-cntr_real(1)).*(lengthim)./length_real);
+                    s(most_common_frame_indx).p(most_common_frame).b(2:3)=[tempx,tempy];
+                    temp=s(most_common_frame_indx).p(most_common_frame).A(3,:);
+                    s(most_common_frame_indx).p(most_common_frame).A(3,:)=s(most_common_frame_indx).p(most_common_frame).A(2,:);
+                    s(most_common_frame_indx).p(most_common_frame).A(2,:)=temp;
+                    s(most_common_frame_indx).p(most_common_frame).A(:,3)=s(most_common_frame_indx).p(most_common_frame).A(:,3).*-1;
+                    s(most_common_frame_indx).p(most_common_frame).A=[[s(most_common_frame_indx).p(most_common_frame).A;[0,0,0]],[0;0;0;1]];
+                    
+                    %get the original index
+                    Rab=[[1,0,0];s(most_common_frame_indx).p(org_indx).b(2:3),s(most_common_frame_indx).p(org_indx).A(2:3,2:3)];
+                    most_common_frame=mode(found_frame_indx(find(found_frame_indx(:,1)~=0),feat_indx));
+                    Rac=[[1,0,0];s(most_common_frame_indx).p(most_common_frame).b(2:3),s(most_common_frame_indx).p(most_common_frame).A(2:3,2:3)];
+                    
+                    current_b =[corners.Location(frame,:)'];
+                    a=corners.Orientation(frame,1);
+                    current_A=[[cos(a), sin(a)];[-sin(a),cos(a)]];
+                    
+                    Rac_new=[[1,0,0];current_b,current_A];
+                    Rab_new=Rac_new*inv(Rac)*Rab;
+                    
+                    s_new.p(feat_indx).b=[0; Rab_new(2:3,1)];
+                    Rab_new(2:3,1)=[0,0];
+                    s_new.p(feat_indx).A=Rab_new;
+                    
+                    %the detected redundant frame
+                    p.b=[0;corners.Location(frame,:)'];
+                    a=corners.Orientation(frame ,1);
+                    %forming the rotation matrix
+                    p.A=[[1,0,0];[0,cos(a), sin(a)];[0,-sin(a),cos(a)]];
+                end
+            end
+        end
+        returnval=1;
+        
+        %convert pararameters
+        for obj_group=1:length(leadFrames)
+            for iter=1:length(s_new.p)
+                pt_x(iter)=length_real*(cntr_im(2)-s_new.p(iter).b(3))/lengthim+cntr_real(1);
+                pt_y(iter)=width_real*(cntr_im(1)-s_new.p(iter).b(2))/widthim+cntr_real(2);
+            end
+        end
+        for iter=1:length(s_new.p)
+            s_new.p(iter).b(2)=pt_x(iter);
+            s_new.p(iter).b(3)=pt_y(iter);
+            s_new.p(iter).b(4)=0;
+            
+            temp=s_new.p(iter).A(2,:);
+            s_new.p(iter).A(2,:)=s_new.p(iter).A(3,:);
+            s_new.p(iter).A(3,:)=temp;
+            s_new.p(iter).A(:,3)=s_new.p(iter).A(:,3).*-1;
+            s_new.p(iter).A=[[s_new.p(iter).A;[0,0,0]],[0;0;0;1]];
+        end
+        
+        %transform the needed features to frames s_new A,b
+        if sum(matched_mat)<length(indx)
+            imshow(img);
+            imwrite(img,images_path);
+        else
+            %     s_new=struct('p',struct('A',[],'b',[]));
+            %     %if the identified frame if the relevant one itself, then just convert
+            %     %s as is
+            %     for feat_indx=1:length(indx)
+            %             s_new.p(feat_indx).b=[0;corners.Location(boxPairs(index_matched_feat(feat_indx),1),:)'];
+            %             a=corners.Orientation(boxPairs(index_matched_feat(feat_indx),1));
+            %             %forming the rotation matrix
+            %             s_new.p(feat_indx).A=[[1,0,0];[0,cos(a), sin(a)];[0,-sin(a),cos(a)]];
+            %
+            %     end
+            
+            nbFrames_new = length(indx);
+            
+            % obtain the features for the given demonstration id
+            for n=1:nbFrames_new
+                pTmp(n).b = s_new.p(n).b ;
+                pTmp(n).A = s_new.p(n).A ;
+            end
+            
+            indx1=indx;
+            indx=leadFrames(indx);
+            %get GMR in main frame
+            for m=1:nbFrames_new
+                %             MuTmp(1:2,:,m) = pTmp(m).A(2:end,2:end) * MuGMR(1:2,:, indx(m)) + repmat(pTmp(m).b(2:4),1,size(MuGMR,2));
+                %             for t=1:size(MuGMR,2)
+                %                 SigmaTmp(:,:,t,m) = pTmp(m).A(2:4,2:4) * SigmaGMR(:,:,t,indx(m)) * pTmp(m).A(2:4,2:4)';
+                %             end
+                
+                MuTmp(1:2,:,m) = pTmp(m).A(2:3,2:3) * MuGMR(1:2,:,indx(m)) + repmat(pTmp(m).b(2:3),1,size(MuGMR,2));
+                for t=1:model.nbData
+                    SigmaTmp(1:2,1:2,t,m) = pTmp(m).A(2:3,2:3) * SigmaGMR(1:2,1:2,t,leadFrames(m)) * pTmp(m).A(2:3,2:3)';
+                end
+                if model.nbVar>3
+                    MuTmp(3:size(MuGMR,1),:,m) =  MuGMR(3:size(MuGMR,1),:,indx(m)) ;
+                    for t=1:model.nbData
+                        SigmaTmp(3:size(MuTmp,1),3:size(MuTmp,1),t,m) = SigmaGMR(3:size(MuTmp,1),3:size(MuTmp,1),t,indx(m)) ;
+                    end
+                end
+            end
+                        
+            %% reproducing the path
+            method =3;
+            MuTmp2=zeros(size(MuGMR,1),  model.nbData, model.nbFrames);
+            SigmaTmp2= zeros(size(MuGMR,1),size(MuGMR,1), model.nbData, model.nbFrames);
+            if method ==1
+                %FINDING THE CLOSEST RING POINT TO THE OTHER GAUSSIANS
+                for t=1:model.nbData
+                    for m=1:length(leadFrames)
+                        if model.orientless(indx(m))==1 && length(leadFrames)>1%don't do for any frame
+                            closestid=0;%initialise
+                            closestd=100000;
+                            
+                            for k=1:length(leadFrames)
+                                if model.orientless(indx(k))==0
+                                    d=sqrt((MuTmp(1,t,k)-pTmp(m).b(2))^2+(MuTmp(2,t,k)-pTmp(m).b(3))^2)-model.Mu_dohnut(t,indx(m));
+                                    if closestd>d
+                                        closestd=d;
+                                        closestid=k;
+                                    end
+                                else
+                                    if k~=m
+                                        d=sqrt((pTmp((k)).b(2)-pTmp((m)).b(2))^2+(pTmp((k)).b(3)-pTmp((m)).b(3))^2)-model.Mu_dohnut(t,indx(k));
+                                        if closestd>d
+                                            closestd=d;
+                                            closestid=k;
+                                        end
+                                    end
+                                end
+                            end
+                            %find the coordinates of the actual pint closest
+                            MuTmp2(1:2,t,m)=(closestd/(closestd+model.Mu_dohnut(t,indx(m)))).*(pTmp(m).b(2:3)-MuTmp(1:2,t,closestid))+MuTmp(1:2,t,closestid);
+                            if model.orientless(indx(closestid))==1
+                                MuTmp2(1:2,t,m)=pTmp(m).b(2:3)+(model.Mu_dohnut(t,indx(m))/(closestd+model.Mu_dohnut(t,indx(closestid)))).*[(pTmp((closestid)).b(2)-pTmp((m)).b(2));(pTmp((closestid)).b(3)-pTmp((m)).b(3))];
+                            end
+                            eigenvectorsmall=[(pTmp((closestid)).b(2)-pTmp((m)).b(2)),(pTmp((closestid)).b(3)-pTmp((m)).b(3))];
+                            eigenvectorbig=[(pTmp((closestid)).b(3)-pTmp((m)).b(3)),-(pTmp((closestid)).b(2)-pTmp((m)).b(2))];
+                            V=[eigenvectorsmall;eigenvectorbig];
+                            D=[model.Sigma_dohnut(t,indx(m)),0;0,model.Sigma_dohnut(t,indx(m))*2];
+                            SigmaTmp2(1:2,1:2,t,m)=V*D*inv(V);
+                            
+                            %                 SigmaTmp2(1:2,1:2,t,m)=[model.Sigma_dohnut(t,indx(m)),0;0,model.Sigma_dohnut(t,indx(m))];
+                            if model.nbVar>3
+                                MuTmp2(3:model.nbVar-1,t,m)=MuTmp(3:end,t,m);
+                                SigmaTmp2(3:model.nbVar-1,3:model.nbVar-1,t,m)= SigmaTmp(3:end,3:end,t,m);
+                            end
+                        else
+                            MuTmp2(:,t,m)=MuTmp(:,t,m);
+                            SigmaTmp2(:,:,t,m)=SigmaTmp(:,:,t,m);
+                        end
+                    end
+                end
+            elseif method==2
+                for t=1:model.nbData
+                    for m=1:length(leadFrames)
+                        d=[];point=[];
+                        if model.orientless(indx(m))==1 && length(leadFrames)>1%don't do for any frame
+                            for k=1:length(leadFrames)
+                                %calculate distance between each 2 gaussians
+                                if model.orientless(indx(k))==0
+                                    d(k)=abs(sqrt((MuTmp(1,t,k)-pTmp(m).b(2))^2+(MuTmp(2,t,k)-pTmp(m).b(3))^2)-model.Mu_dohnut(t,indx(m)));
+                                    %find the closest point on the ring to each gaus
+                                    point(:,k)=(d(k)/(d(k)+model.Mu_dohnut(t,indx(m)))).*(pTmp(m).b(2:3)-MuTmp(1:2,t,k))+MuTmp(1:2,t,k);
+                                else
+                                    if k~=m
+                                        d(k)=abs(sqrt((pTmp(k).b(2)-pTmp(m).b(2))^2+(pTmp((k)).b(3)-pTmp((m)).b(3))^2)-model.Mu_dohnut(t,indx(k))-model.Mu_dohnut(t,indx(m)));
+                                        point(:,k)=(model.Mu_dohnut(t,indx(m)))/(d(k)+model.Mu_dohnut(t,indx(k))+model.Mu_dohnut(t,indx(m))).*(pTmp(k).b(2:3)-pTmp(m).b(2:3))+pTmp(m).b(2:3);
+                                        %                                 point(:,k)=pTmp(m).b(2:3)+(model.Mu_dohnut(t,indx(m))/(d(k)+model.Mu_dohnut(t,indx(k)))).*[(pTmp((k)).b(2)-pTmp((m)).b(2));(pTmp((k)).b(3)-pTmp((m)).b(3))];
+                                    end
+                                end
+                            end
+                            
+                            %average the points weighted by the sigma
+                            dd=1./d;
+                            
+                            for k=1:length(leadFrames)
+                                if model.orientless(indx(k))==1 && k~=m
+                                    %                             temp(1:2,1:2,t,m)=[model.Sigma_dohnut(t,indx(m)),0;0,model.Sigma_dohnut(t,indx(m))];
+                                    %                             SigmaTmp2(:,:,t,m)=SigmaTmp2(:,:,t,m)+inv(temp(:,:,t,indx(k)));
+                                    %                             MuTmp2(:,t,m) = MuTmp2(:,t,m) +temp(:,:,t,indx(k)) \ point(:,k);
+                                    MuTmp2(1:2,t,m)=MuTmp2(1:2,t,m)+point(:,k)*dd(k)/sum(dd(dd~=Inf));
+                                elseif model.orientless(indx(k))==0
+                                    %                             SigmaTmp2(:,:,t,m)=SigmaTmp2(:,:,t,m)+inv(SigmaTmp(:,:,t,k));
+                                    %                             MuTmp2(:,t,m) = MuTmp2(:,t,m) + SigmaTmp(:,:,t,k) \ point(:,k);
+                                    MuTmp2(1:2,t,m)=MuTmp2(1:2,t,m)+point(:,k)*(dd(k)/sum(dd(dd~=Inf)));
+                                end
+                            end
+                            MuTmp2(1:2,t,m)=MuTmp2(1:2,t,m);
+                            SigmaTmp2(1:2,1:2,t,m)=[[model.Sigma_dohnut(t,indx(m)),0];[0,model.Sigma_dohnut(t,indx(m))]];
+                            %                     SigmaTmp2(:,:,t,m) = inv(SigmaTmp2(:,:,t,m));
+                            %                     MuTmp2(:,t,m) = SigmaTmp2(:,:,t,m)  * MuTmp2(:,t,m);
+                            if model.nbVar>3
+                                MuTmp2(3:model.nbVar-1,t,m)=MuTmp(3:end,t,m);
+                                SigmaTmp2(3:model.nbVar-1,3:model.nbVar-1,t,m)= SigmaTmp(3:end,3:end,t,m);
+                            end
+                        else
+                            MuTmp2(:,t,m)=MuTmp(:,t,m);
+                            SigmaTmp2(:,:,t,m)=SigmaTmp(:,:,t,m);
+                        end
+                    end
+                end
+            elseif method ==3
+                for m=1:length(indx)
+                    mode=[];
+                    for t=1:model.nbData
+                        d=zeros(1,length(indx));point=zeros(2,length(indx));
+                        if model.orientless(indx1(m))==1 && length(indx)>1%don't do for any frame
+                            for k=1:length(indx)
+                                %calculate distance between each 2 gaussians
+                                if model.orientless(indx1(k))==0
+                                    d(k)=abs(sqrt((MuTmp(1,t,k)-pTmp(m).b(2))^2+(MuTmp(2,t,k)-pTmp(m).b(3))^2)-model.Mu_dohnut(t,indx1(m)));
+                                    %find the closest point on the ring to each gaus
+                                    point(:,k)=(d(k)/(d(k)+model.Mu_dohnut(t,indx1(m)))).*(pTmp(m).b(2:3)-MuTmp(1:2,t,k))+MuTmp(1:2,t,k);
+                                else
+                                    if k~=m
+                                        fdist=sqrt((pTmp(k).b(2)-pTmp(m).b(2))^2+(pTmp((k)).b(3)-pTmp((m)).b(3))^2);
+                                        if model.Mu_dohnut(t,indx1(k))+model.Mu_dohnut(t,indx1(m))<fdist %2 external circles
+                                            d(k)=fdist-model.Mu_dohnut(t,indx1(k))-model.Mu_dohnut(t,indx1(m));
+                                            point(:,k)=(model.Mu_dohnut(t,indx1(m)))/(fdist).*(pTmp(k).b(2:3)-pTmp(m).b(2:3))+pTmp(m).b(2:3);
+                                            
+                                            mode(t,k)=1;
+                                        elseif model.Mu_dohnut(t,indx1(k))+model.Mu_dohnut(t,indx1(m))>=fdist && abs(model.Mu_dohnut(t,indx1(k))-model.Mu_dohnut(t,indx1(m)))<=fdist %2 intersecting circles
+                                            temp1=model.Mu_dohnut(t,indx1(m))-(model.Mu_dohnut(t,indx1(m))+model.Mu_dohnut(t,indx1(k))-fdist)/2;
+                                            temp2=sqrt(model.Mu_dohnut(t,indx1(m))^2-temp1^2);
+                                            if indx1(m)<indx1(k)
+                                                transmat=[0,-1;+1,0];
+                                            else
+                                                transmat=[0,1;-1,0];
+                                            end
+                                            
+                                            x=(fdist^2-model.Mu_dohnut(t,indx1(k))^2+model.Mu_dohnut(t,indx1(m))^2)/(2*fdist);
+                                            y=sqrt(model.Mu_dohnut(t,indx1(m))^2-x^2);
+
+                                            d(k)=0.00000000000000000001;
+                                            point(:,k)=pTmp(m).b(2:3)+x.*(pTmp(k).b(2:3)-pTmp(m).b(2:3))./fdist+(transmat*(pTmp(k).b(2:3)-pTmp(m).b(2:3))).*y./fdist;
+                                            mode(t,k)=2;
+                                        elseif abs(model.Mu_dohnut(t,indx1(k))-model.Mu_dohnut(t,indx1(m)))>fdist
+                                            if model.Mu_dohnut(t,indx1(m))>model.Mu_dohnut(t,indx1(k))
+                                                d(k) = abs(model.Mu_dohnut(t,indx1(m))-model.Mu_dohnut(t,indx1(k))-fdist); %distance between two circles
+                                                point(:,k)=pTmp(m).b(2:3)+(pTmp(k).b(2:3)-pTmp(m).b(2:3))*model.Mu_dohnut(t,indx1(m))/fdist;
+                                            else
+                                                d(k) =abs( model.Mu_dohnut(t,indx1(k))-model.Mu_dohnut(t,indx1(m))-fdist);%distance between two circles
+                                                point(:,k)=pTmp(m).b(2:3)+(-pTmp(k).b(2:3)+pTmp(m).b(2:3))*model.Mu_dohnut(t,indx1(m))/fdist;
+                                            end
+                                            mode(t,k)=3;
+                                        end
+                                    end   
+                                end
+                            end
+
+                            dd=1./d;
+
+                            for k=1:length(indx)                               
+                                if k~=m
+                                    MuTmp2(1:2,t,m)=MuTmp2(1:2,t,m)+point(:,k)*(dd(k)/(sum(dd(find(dd~=dd(m))))));
+                                end
+                            end
+                            MuTmp2(1:2,t,m)=MuTmp2(1:2,t,m);
+                            SigmaTmp2(1:2,1:2,t,m)=[[model.Sigma_dohnut(t,indx1(m)),0];[0,model.Sigma_dohnut(t,indx1(m))]];
+                            if model.nbVar>3
+                                MuTmp2(3:model.nbVar-1,t,m)=MuTmp(3:end,t,m);
+                                SigmaTmp2(3:model.nbVar-1,3:model.nbVar-1,t,m)= SigmaTmp(3:end,3:end,t,m);
+                            end
+                        else
+                            MuTmp2(:,t,m)=MuTmp(:,t,m);
+                            SigmaTmp2(:,:,t,m)=SigmaTmp(:,:,t,m);
+                        end
+                    end
+                end
+            end       
+            
+            for t=1:size(MuGMR,2)
+                SigmaP = zeros(model.nbVar-1);
+                MuP = zeros(model.nbVar-1, 1);
+                for m=1:nbFrames_new
+                    SigmaP = SigmaP + inv(SigmaTmp2(:,:,t,m));
+                    MuP = MuP + SigmaTmp2(:,:,t,m)\ MuTmp2(:,t,m);
+                end
+                r(1).Sigma(:,:,t) = inv(SigmaP);
+                r(1).Data(:,t) = r(1).Sigma(:,:,t) * MuP;
+            end
+        end
+        imshow(image); hold on;
+        for m=1:nbFrames_new
+            tempx=-(-cntr_im(1)+(pTmp(m).b(3)-cntr_real(2)).*(widthim)./width_real);
+            tempy=-(-cntr_im(2)+(pTmp(m).b(2)-cntr_real(1)).*(lengthim)./length_real);
+            plot(tempx, tempy,'.','markersize',30);
+            plot([tempx tempx+pTmp(m).A(2,3)], [tempy tempy+pTmp(m).A(3,3)], '-','linewidth',6);
+            
+            %         plot(pTmp(m).b(2), pTmp(m).b(3), '.','markersize',45,'color','yellow');
+            %         plot([pTmp(m).b(2) pTmp(m).b(2)+12*pTmp(m).A(2,3)], [pTmp(m).b(3) pTmp(m).b(3)+12*pTmp(m).A(3,3)], 'MarkerSize',30,'color','black');
+            
+        end
+        %plot the redundant frame if any 
+        if exist('p')
+            plot(p.b(2), p.b(3),'.','markersize',30);
+            plot([p.b(2) p.b(2)+p.A(2,3)], [p.b(3) p.b(3)+p.A(3,3)], '-','linewidth',6);
+        end
+        
+        tempx=-(-cntr_im(1)+(r(1).Data(2,:)-cntr_real(2)).*(widthim)./width_real);
+        tempy=-(-cntr_im(2)+(r(1).Data(1,:)-cntr_real(1)).*(lengthim)./length_real);
+        plot(tempx, tempy,'-','linewidth',1.5,'color','red');
+        %     plot(r(1).Data(1,:),r(1).Data(2,:), 'color','white','linewidth',2.0);
+        %     plot(current_b(1),current_b(2), '.','markersize',35,'color','green')
+        
+%         % do task
+%         returnval=vrep.simxSetIntegerSignal(id,'gripperclose',0,vrep.simx_opmode_oneshot_wait);
+%         for ind=1:size(MuGMR,2)
+%             [returnval] =vrep.simxSetObjectPosition(id, target, -1, r(1).Data(1:3,ind),...
+%                 vrep.simx_opmode_oneshot_wait);
+%             
+%             %gripper
+%             if size(r(1).Data,1)>3
+%                 if r(1).Data(4,ind)>0.5
+%                     returnval=vrep.simxSetIntegerSignal(id,'gripperclose',1,vrep.simx_opmode_oneshot_wait);
+%                 else
+%                     returnval=vrep.simxSetIntegerSignal(id,'gripperclose',0,vrep.simx_opmode_oneshot_wait);
+%                 end
+%             end
+%         end
+%         %default
+%         returnval=vrep.simxSetIntegerSignal(id,'gripperclose',0,vrep.simx_opmode_oneshot_wait);
+%         returnCode=vrep.simxSetObjectPosition(id,target,-1, target_init_pos,...
+%             vrep.simx_opmode_oneshot_wait);
+        
+        saveas(gcf,strcat(task_path, '\results\img2_', int2str(testiter), '.jpg'));
+    end
+end
+##### SOURCE END #####
+--></body></html>
