@@ -8,24 +8,24 @@ if nargin==0
     cd(currentFolder);
     addpath(genpath(currentFolder));
     %load images
-    task_path = "tasks\handover";
+    task_path = "tasks/batteryinbox";
 end
 
 %% Load Data
-load(strcat(task_path,'\model.mat'));
-load(strcat(task_path,'\paths.mat'));
-load(strcat(task_path,'\features.mat'));
-load(strcat(task_path, '\calib.mat'));
+load(strcat(task_path,'/model.mat'));
+load(strcat(task_path,'/paths.mat'));
+load(strcat(task_path,'/features.mat'));
+load(strcat(task_path, '/calib.mat'));
 
-imgs = [dir(fullfile(task_path,'\*.PNG')),...
-    ;dir(fullfile(task_path,'\*.jpg'));...
-    dir(fullfile(task_path,'\*.JPEG'))];
+imgs = [dir(fullfile(task_path,'/*.PNG')),...
+    ;dir(fullfile(task_path,'/*.jpg'));...
+    dir(fullfile(task_path,'/*.JPEG'))];
 
 %combine paths into struct s
 for i=1:length(s)
-    s(i).Data=paths(i).path(1:4,:);
+    s(i).Data=paths(i).path(:,:);
 end
-image=imread(strcat(imgs(1).folder,'\', imgs(1).name));imshow(image); hold on;
+image=imread(strcat(imgs(1).folder,'/', imgs(1).name));imshow(image); hold on;
 lengthim = size(image,1);
 widthim = size(image,2);
 cntr_real=[cam_pos(1),cam_pos(2),cam_posrel(3)];
@@ -137,7 +137,7 @@ for iterNum=1:totalNum
         %         subplot(1,3,id); hold on;
         
         subplot(2,3,id);
-        image=imread(strcat(imgs(id).folder,'\', imgs(id).name));imshow(image); hold on;
+        image=imread(strcat(imgs(id).folder,'/', imgs(id).name));imshow(image); hold on;
         %         lengthim = size(image,1);
         %         widthim = size(image,2);
         %         cntr_real=[cam_pos(1),cam_pos(2),cam_posrel(3)];
@@ -189,7 +189,7 @@ end
 
 %% plot final result
 figure;
-image=imread(strcat(imgs(id).folder,'\', imgs(id).name));imshow(image);hold on;
+image=imread(strcat(imgs(id).folder,'/', imgs(id).name));imshow(image);hold on;
 for n=1:length(indx)
     m=leadFrames(indx(n));
     tempx=-(-cntr_im(1)+(s(id).p(m).b(3)-cntr_real(2)).*(widthim)./width_real);
@@ -206,7 +206,7 @@ tempx=-(-cntr_im(1)+(r(2).Data(2,:)-cntr_real(2)).*(widthim)./width_real);
 tempy=-(-cntr_im(2)+(r(2).Data(1,:)-cntr_real(1)).*(lengthim)./length_real);
 plot(tempx, tempy,'.','linewidth',1.5,'color','white');%relevant ring - after period
 figure;
-image=imread(strcat(imgs(id).folder,'\', imgs(id).name));imshow(image);hold on;
+image=imread(strcat(imgs(id).folder,'/', imgs(id).name));imshow(image);hold on;
 for n=1:length(leadFrames)
     m=leadFrames(n);
     tempx=-(-cntr_im(1)+(s(id).p(m).b(3)-cntr_real(2)).*(widthim)./width_real);
@@ -276,4 +276,4 @@ save('mainRL_Varypoolsize_output','Relev1');
 %
 % save(strcat(task_path,"\result.mat"),'path','indx','poolsize');
 indx=sort(indx);
-save(strcat(task_path,'\parameters.mat'), 'leadFrames', 'objs','s', 'indx');
+save(strcat(task_path,'/parameters.mat'), 'leadFrames', 'objs','s', 'indx');

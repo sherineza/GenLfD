@@ -24,7 +24,7 @@ nbDemos = length(demo_files);
 
 %combine paths into struct s
 for i=1:nbDemos
-    s(i).Data=paths(i).path(:,:);%used to be path([1:4,8],:)
+    s(i).Data=paths(i).path([1:3],:);
 end
 
 %% Model Parameters

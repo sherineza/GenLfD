@@ -300,6 +300,6 @@ for n=1:model.nbSamples
         r(n).Data(1:model.nbVar-1,t) = r(n).Sigma(:,:,t) * MuP;
     end
 end
-hold off;
+
 end
 

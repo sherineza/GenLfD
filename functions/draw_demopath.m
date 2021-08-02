@@ -1,6 +1,6 @@
-function [finalX,finalY] = draw_demopath(nbData,Demo)
+function [finalX,finalY] = draw_demopath(nbData,filename)
 figure;
-imshow(imread(Demo.filename));hold on;
+imshow(imread(filename));hold on;
 set(gcf, 'Position', get(0,'Screensize'));
 % message = sprintf('Left click and hold to begin drawing a freehand path.\nSimply lift the mouse button to finish.\nDRAW FAST!!!');
 % uiwait(msgbox(message));

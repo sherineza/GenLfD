@@ -5,7 +5,7 @@ nbSamples = length(image_files);
 
 for i=1:nbSamples
     %read image
-    feat(i).filename= strcat(image_files(i).folder,'\', image_files(i).name);
+    feat(i).filename= strcat(image_files(i).folder,'/', image_files(i).name);
     feat(i).image = rgb2gray(imread(feat(i).filename));
     %detect SURF points
     feat(i).corners = detectfeatures(feat(i).image);

@@ -8,22 +8,22 @@ if nargin < 1
 end
 
 %code to call python hand detector
-pyenv;
+pe=pyenv;
+% pyenv('Version','/System/Library/Frameworks/Python.framework/Versions/Current/Resources/Python.app/Contents/MacOS/Python');
+
 % insert(py.sys.path, int32(0),'C:\PhD\GUIv1\venv\Lib\site-packages');
 % insert(py.sys.path, int32(0),'C:\PhD\GUIv1\yolo-hand-detection');
-
+% pyenv('Version','executable')
 
 currentFolder=fileparts(fileparts(mfilename('fullpath')));
-path_sitepackages= strcat(currentFolder, '\python-handdetector\venv\Lib\site-packages');
-path_handdetector= strcat(currentFolder, '\python-handdetector\yolo-hand-detection');
+path_sitepackages= strcat(currentFolder, '/python-handdetector/venv/Lib/site-packages');
+path_handdetector= strcat(currentFolder, '/python-handdetector/yolo-hand-detection');
 insert(py.sys.path, int32(0),path_sitepackages);
 insert(py.sys.path, int32(0),path_handdetector);
 
 
 mod=py.importlib.import_module('returnhand');
 py.importlib.reload(mod);
-
-
 
 handlist=py.returnhand.main(images_path);
 

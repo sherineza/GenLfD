@@ -3,6 +3,7 @@ function [] = mainGetFrames(task_path)
 % pixel positions
 currentFolder=fileparts(mfilename('fullpath'));
 
+% Specify task path is function called with no inputs
 if nargin==0
     clc; clear; close all;clear classes;
     %Adds all subfolders to path
@@ -10,30 +11,33 @@ if nargin==0
     cd(currentFolder);
     addpath(genpath(currentFolder));
     %load images
-    task_path = "tasks\sortobjs";
+    task_path = "tasks/batteryinbox";
 end
 
-load(strcat(task_path, '\calib.mat'));
+load(strcat(task_path, '/calib.mat')); %loads camera calibration information
 
-demo_files = [dir(fullfile(task_path,'\*.PNG')),...
-    ;dir(fullfile(task_path,'\*.jpg'));
-    dir(fullfile(task_path,'\*.JPEG'))];
-% demo_files = demo_files([1,2,3,4]);
+demo_files = [dir(fullfile(task_path,'/*.PNG')),...
+    ;dir(fullfile(task_path,'/*.jpg'));
+    dir(fullfile(task_path,'/*.JPEG'))];
 nbDemos = size(demo_files,1);
 
 %% Detect features
+% detecting features happens in three steps
 disp("Detecting SURF Features...")
-[Demo, INDEX] = get_features(demo_files);
+[Demo, INDEX] = get_features(demo_files); % 1. detecting features in each demonstration image
 disp("Matching Features across Demonstration Images...")
-INDEX=  match_feat_demos(Demo, INDEX, 0);
-s = feat2frame(Demo,INDEX);
+INDEX=  match_feat_demos(Demo, INDEX, 0); % 2. matching features between demonstration images
+s = feat2frame(Demo,INDEX);% 3. converting data types to create required matrix b and A inputs for TP-GMM
+
+
 thresh=0.05:0.01:0.2; %for redundant frames
 disp("Group Redundant Features (Frames)...")
-[leadFrames, objs] = group_redundant(s,thresh);%TODO needs fixing
+[leadFrames, objs] = group_redundant(s,thresh);
 
-%Hand features
+%% Detecting Hand features
 disp("Detecting Hand Features...")
-P_hand = gethandfeatures(strcat(currentFolder,'\',task_path));
+% P_hand = gethandfeatures(strcat(currentFolder,'\',task_path));
+P_hand=[];
 if length(P_hand)~=0
     for demoindx=1:nbDemos
         s(demoindx).p(end+1).b=P_hand(demoindx).b;
@@ -48,12 +52,13 @@ end
 
 
 %% Plot Features
+figure('WindowState','maximized');
 xx = round(linspace(1,256,length(leadFrames)));
 clrmap = colormap('jet');
-colors = min(clrmap(xx,:),.95);figure('WindowState','maximized');
+colors = min(clrmap(xx,:),.95);
 title(strcat('Grouped Frames in Demonstration Images.'));
 for k=1:nbDemos
-    image = imread(strcat(demo_files(k).folder,'\', demo_files(k).name));
+    image = imread(strcat(demo_files(k).folder,'/', demo_files(k).name));
     subplot(2,3,k);
     imshow(image);hold on;
     
@@ -103,7 +108,7 @@ end
 
 %% Save Data
 features = adv_package_features(Demo,leadFrames,INDEX);
-save(strcat(task_path, '\features.mat'), 'features','handfeature','leadFrames','objs','s');
+save(strcat(task_path, '/features.mat'), 'features','handfeature','leadFrames','objs','s');
 
 mainTPGMM(task_path);
 indx = findIrrelevant(task_path);

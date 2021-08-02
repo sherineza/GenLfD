@@ -3,13 +3,13 @@ clear all;clc;close all; % clearing previous data
 currentFolder=fileparts(mfilename('fullpath'));
 cd(currentFolder);
 addpath(genpath(currentFolder));
-task_path = "tasks\obstacleavoid1";
+task_path = "tasks/sortobjs";
 
 vrep=remApi('remoteApi');
 vrep.simxFinish(-1);
 id=vrep.simxStart('127.0.0.1',19997,true,true,1000,5); % connect simulation to matlab
 if id < 0
-    system(strcat(task_path,"\RobotScene.ttt")); % open simulation software if not already open
+    system(strcat(task_path,"/RobotScene.ttt")); % open simulation software if not already open
 end
 while true
     vrep=remApi('remoteApi');
@@ -76,7 +76,7 @@ for i=1:nbDemosplan
                 return;
         end
     end
-    imwrite(image,strcat(task_path, '\img', int2str(i), '.jpg'));
+    imwrite(image,strcat(task_path, '/img', int2str(i), '.jpg'));
     
     % 3D points
     % choose point on the path
@@ -230,7 +230,7 @@ for i=1:nbDemosplan
     tempx=-(-cntr_im(1)+(Data0(:,2)-cntr_real(2)).*(resolut(1))./width_real);
     tempy=-(-cntr_im(2)+(Data0(:,1)-cntr_real(1)).*(resolut(2))./length_real);
 %     Data0(:,1:2)=[tempx,tempy];
-    figure(i); hGreenCurve = plot(Data0(:,1), Data0(:,2), '-g','MarkerSize', 50);
+    figure(i); hGreenCurve = plot(tempx, tempy, '-g','MarkerSize', 50);
     
     % add timesteps 
     if length(Data0(:,1))==200
@@ -243,9 +243,8 @@ for i=1:nbDemosplan
     end
     paths(i).path=Data0'; %path is nbVar x nbData 
 end
-
-save(strcat(task_path, '\paths.mat'), 'paths')
-save(strcat(task_path, '\calib.mat'), 'cam_pos', 'cam_posrel')
+save(strcat(task_path, '/paths.mat'), 'paths')
+save(strcat(task_path, '/calib.mat'), 'cam_pos', 'cam_posrel')
 
 disp("Demonstration Successfully Recorded. Now begins the Automatic Training.  ")
 mainGetFrames(task_path);
