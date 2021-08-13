@@ -8,7 +8,7 @@ if nargin==0
     cd(currentFolder);
     addpath(genpath(currentFolder));
     %load images
-    task_path = "tasks/batteryinbox";
+    task_path = "tasks/cubeinbox3";
 end
 
 %% Load Data

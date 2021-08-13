@@ -13,7 +13,7 @@ if nargin==0
     %load images
     task_path = "tasks/batteryinbox";
 end
-
+% pyenv('Version','/usr/bin/python3');
 load(strcat(task_path, '/calib.mat')); %loads camera calibration information
 
 demo_files = [dir(fullfile(task_path,'/*.PNG')),...
@@ -24,19 +24,19 @@ nbDemos = size(demo_files,1);
 %% Detect features
 % detecting features happens in three steps
 disp("Detecting SURF Features...")
-[Demo, INDEX] = get_features(demo_files); % 1. detecting features in each demonstration image
-disp("Matching Features across Demonstration Images...")
-INDEX=  match_feat_demos(Demo, INDEX, 0); % 2. matching features between demonstration images
-s = feat2frame(Demo,INDEX);% 3. converting data types to create required matrix b and A inputs for TP-GMM
-
-
-thresh=0.05:0.01:0.2; %for redundant frames
-disp("Group Redundant Features (Frames)...")
-[leadFrames, objs] = group_redundant(s,thresh);
+% [Demo, INDEX] = get_features(demo_files); % 1. detecting features in each demonstration image
+% disp("Matching Features across Demonstration Images...")
+% INDEX=  match_feat_demos(Demo, INDEX, 0); % 2. matching features between demonstration images
+% s = feat2frame(Demo,INDEX);% 3. converting data types to create required matrix b and A inputs for TP-GMM
+% 
+% 
+% thresh=0.05:0.01:0.2; %for redundant frames
+% disp("Group Redundant Features (Frames)...")
+% [leadFrames, objs] = group_redundant(s,thresh);
 
 %% Detecting Hand features
 disp("Detecting Hand Features...")
-% P_hand = gethandfeatures(strcat(currentFolder,'\',task_path));
+P_hand = gethandfeatures(strcat(currentFolder,'/',task_path));
 P_hand=[];
 if length(P_hand)~=0
     for demoindx=1:nbDemos
